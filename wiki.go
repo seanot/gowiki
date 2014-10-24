@@ -7,13 +7,11 @@ import (
         "log"
         "net"
         "net/http"
-        // "regexp"
         "code.google.com/p/sre2/sre2"
         "errors"
 )
 
 var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
-// var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")                   // change this to sre2.MustParse(...)
 var validPath = sre2.MustParse("^/(edit|save|view)/([a-zA-Z0-9]+)$")
 var addr = flag.Bool("addr", false, "find open address and print to final-port.txt")
 
@@ -59,13 +57,12 @@ func (p *Page) save() error {
 
 func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
         u := r.URL.Path
-        // m := validPath.FindStringSubmatch(u)           // regexp
         m := validPath.MatchIndex(u)
         if m == nil {
                 http.NotFound(w, r)
                 return "", errors.New("Invalid Page Title")
         }
-        return string(u(m[2])), nil // The title is the second subexpression of the regular expression output. Needs to change to be used with sre2
+        return string(u[m[4]:m[5]]), nil
 }
 
 func viewHandler(w http.ResponseWriter, r *http.Request, title string) {
@@ -99,13 +96,12 @@ func saveHandler(w http.ResponseWriter, r *http.Request, title string) {
 func makeHandler(fn func (http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
         return func(w http.ResponseWriter, r *http.Request) {
                 u := r.URL.Path
-                // m := validPath.FindStringSubmatch(u)   // regexp
                 m := validPath.MatchIndex(u)
                 if m == nil {
                         http.NotFound(w, r)
                         return
                 }
-                fn(w, r, string(u(m[2]))) // Will return an int with sre2.
+                fn(w, r, string(u[m[4]:m[5]]))
         }
 }
 
